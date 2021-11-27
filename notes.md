@@ -1,0 +1,11 @@
+https://openreview.net/pdf?id=XwATtbX3oCz
+https://arxiv.org/pdf/2005.09830.pdf
+https://arxiv.org/pdf/2101.09318.pdf
+https://modelnet.cs.princeton.edu/
+https://arxiv.org/pdf/1612.00593.pdf
+https://arxiv.org/abs/1812.05784
+https://arxiv.org/abs/2007.13373
+https://arxiv.org/abs/2008.06374
+https://openaccess.thecvf.com/content_CVPR_2020/papers/Li_PointAugment_An_Auto-Augmentation_Framework_for_Point_Cloud_Classification_CVPR_2020_paper.pdf
+https://arxiv.org/pdf/2105.01288v2.pdf
+https://arxiv.org/pdf/2108.12468v1.pdf
