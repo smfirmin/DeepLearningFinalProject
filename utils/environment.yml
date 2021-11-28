@@ -1,0 +1,9 @@
+name: dlproj
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - cudatoolkit=11.3
+  - pytorch
+  - meshio
+prefix: /home/andrew/miniconda3/envs/dlproj
