@@ -1,0 +1,15 @@
+name: cs7643-finalproject
+channels:
+  - defaults
+  - pytorch
+dependencies:
+  - numpy
+  - pytorch
+  - tqdm
+  - pip
+  - pip:
+    - plyfile
+    - torch-geometric
+
+
+
