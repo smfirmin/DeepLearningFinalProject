@@ -1,17 +1,18 @@
 from __future__ import print_function
+
 import argparse
 import os
 import random
+
+import matplotlib.pyplot as plt
 import torch
+import torch.nn.functional as F
 import torch.nn.parallel
 import torch.optim as optim
 import torch.utils.data
-import matplotlib.pyplot as plt
-from pointnet.dataset import ShapeNetDataset, ModelNetDataset
+from pointnet.dataset import ModelNetDataset, ShapeNetDataset
 from pointnet.model import PointNetCls, feature_transform_regularizer
-import torch.nn.functional as F
 from tqdm import tqdm
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -146,7 +147,7 @@ for epoch in range(start_epoch, start_epoch + opt.nepoch):
             points, target = points.cuda(), target.cuda()
             pred, _, _ = classifier(points)
             loss = F.nll_loss(pred, target)
-            test_loss += loss
+            test_loss += loss.item()
 
             pred_choice = pred.data.max(1)[1]
             correct = pred_choice.eq(target.data).cpu().sum()
@@ -155,46 +156,26 @@ for epoch in range(start_epoch, start_epoch + opt.nepoch):
 
     ave_test_loss = test_loss / len(testdataloader) # all batch sizes may not be same
     test_losses.append(ave_test_loss)
-    print('%s loss: %f accuracy: %f' % (blue('test'), loss.item(), test_correct/test_num))
+    print('%s loss: %f accuracy: %f' % (blue('test'), ave_test_loss, test_correct/test_num))
     
     torch.save({'model_state_dict': classifier.state_dict(), 
                 'optimizer_state_dict': optimizer.state_dict(), 
                 'train_losses': train_losses,
                 'test_losses': test_losses,
                 'epochs': epochs},
-                '%s/cls_model_%d.pth' % (opt.outf, epoch))
+                '%s/pointnet_%d.pth' % (opt.outf, epoch))
 
-total_correct = 0
-total_testset = 0
-for i,data in tqdm(enumerate(testdataloader, 0)):
-    points, target = data
-    target = target[:, 0]
-    points = points.transpose(2, 1)
-    points, target = points.cuda(), target.cuda()
-    classifier = classifier.eval()
-    pred, _, _ = classifier(points)
-    pred_choice = pred.data.max(1)[1]
-    correct = pred_choice.eq(target.data).cpu().sum()
-    total_correct += correct.item()
-    total_testset += points.size()[0]
-
-print("final accuracy {}".format(total_correct / float(total_testset)))
-
-# plotting
+# plotting train and val losses
 ax1 = plt.subplot()
-
-# train and val losses
-ax1.plot(range(1, len(train_losses)), train_losses[1:], label='train')
-ax1.plot(range(1, len(test_losses)), test_losses[1:], label='test')
+ax1.plot(epochs, train_losses, label='train')
+ax1.plot(epochs, test_losses, label='test')
 
 ax1.set_ylabel('Loss')
 ax1.set_xlabel('Epoch')
 # ax1.set_yscale('log')
 ax1.legend()
 
-# overall fig title
-ax1.set_title(f"epochs={args.num_epochs}, batchsz={args.batch_size}")
+ax1.set_title(f"epochs={opt.nepoch}, batchsz={opt.batchSize}")
 plt.tight_layout()
 
-# save
-plt.savefig(f"save/training.png")
+plt.savefig(f"cls/training.png")
