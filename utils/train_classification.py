@@ -1,16 +1,18 @@
 from __future__ import print_function
+
 import argparse
 import os
 import random
+
+import matplotlib.pyplot as plt
 import torch
+import torch.nn.functional as F
 import torch.nn.parallel
 import torch.optim as optim
 import torch.utils.data
-from pointnet.dataset import ShapeNetDataset, ModelNetDataset
+from pointnet.dataset import ModelNetDataset, ShapeNetDataset
 from pointnet.model import PointNetCls, feature_transform_regularizer
-import torch.nn.functional as F
 from tqdm import tqdm
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -76,74 +78,104 @@ testdataloader = torch.utils.data.DataLoader(
         shuffle=True,
         num_workers=int(opt.workers))
 
-print(len(dataset), len(test_dataset))
 num_classes = len(dataset.classes)
-print('classes', num_classes)
+print("Training points:", len(dataset), " Test points:", len(test_dataset), " Classes:", num_classes)
 
 try:
     os.makedirs(opt.outf)
 except OSError:
     pass
 
-classifier = PointNetCls(k=num_classes, feature_transform=opt.feature_transform)
-
-if opt.model != '':
-    classifier.load_state_dict(torch.load(opt.model))
-
-
+classifier = PointNetCls(k=num_classes, feature_transform=opt.feature_transform).cuda()
 optimizer = optim.Adam(classifier.parameters(), lr=0.001, betas=(0.9, 0.999))
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
-classifier.cuda()
+
+if opt.model != '':
+    checkpoint = torch.load(opt.model)
+    classifier.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    train_losses = checkpoint['train_losses']
+    test_losses = checkpoint['test_losses']
+    epochs = checkpoint['epochs']
+    start_epoch = checkpoint['epochs'][-1] + 1
+else:
+    train_losses = []
+    test_losses = []
+    epochs = []
+    start_epoch = 1
+
+# classifier.cuda()
 
 num_batch = len(dataset) / opt.batchSize
 
-for epoch in range(opt.nepoch):
-    scheduler.step()
-    for i, data in enumerate(dataloader, 0):
+for epoch in range(start_epoch, start_epoch + opt.nepoch):
+    print(f"\nEpoch {epoch}:")
+    epochs.append(epoch)
+    train_loss, test_loss, train_correct, test_correct, train_num, test_num = 0, 0, 0.0, 0.0, 0, 0
+    classifier.train()
+
+    for data in tqdm(dataloader):
         points, target = data
         target = target[:, 0]
         points = points.transpose(2, 1)
         points, target = points.cuda(), target.cuda()
-        optimizer.zero_grad()
-        classifier = classifier.train()
         pred, trans, trans_feat = classifier(points)
         loss = F.nll_loss(pred, target)
         if opt.feature_transform:
             loss += feature_transform_regularizer(trans_feat) * 0.001
+        train_loss += loss.item()
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        
         pred_choice = pred.data.max(1)[1]
         correct = pred_choice.eq(target.data).cpu().sum()
-        print('[%d: %d/%d] train loss: %f accuracy: %f' % (epoch, i, num_batch, loss.item(), correct.item() / float(opt.batchSize)))
+        train_correct += correct.item()
+        train_num += points.size()[0]
 
-        if i % 10 == 0:
-            with torch.no_grad():
-                j, data = next(enumerate(testdataloader, 0))
-                points, target = data
-                target = target[:, 0]
-                points = points.transpose(2, 1)
-                points, target = points.cuda(), target.cuda()
-                classifier = classifier.eval()
-                pred, _, _ = classifier(points)
-                loss = F.nll_loss(pred, target)
-                pred_choice = pred.data.max(1)[1]
-                correct = pred_choice.eq(target.data).cpu().sum()
-                print('[%d: %d/%d] %s loss: %f accuracy: %f' % (epoch, i, num_batch, blue('test'), loss.item(), correct.item()/float(opt.batchSize)))
+    scheduler.step()
+    ave_train_loss = train_loss / len(dataloader) # all batch sizes may not be same
+    train_losses.append(ave_train_loss)
+    print('train loss: %f accuracy: %f' % (ave_train_loss, train_correct/train_num))
 
-    torch.save(classifier.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
+    with torch.no_grad():
+        classifier.eval()
+        for data in tqdm(testdataloader):
+            points, target = data
+            target = target[:, 0]
+            points = points.transpose(2, 1)
+            points, target = points.cuda(), target.cuda()
+            pred, _, _ = classifier(points)
+            loss = F.nll_loss(pred, target)
+            test_loss += loss.item()
 
-total_correct = 0
-total_testset = 0
-for i,data in tqdm(enumerate(testdataloader, 0)):
-    points, target = data
-    target = target[:, 0]
-    points = points.transpose(2, 1)
-    points, target = points.cuda(), target.cuda()
-    classifier = classifier.eval()
-    pred, _, _ = classifier(points)
-    pred_choice = pred.data.max(1)[1]
-    correct = pred_choice.eq(target.data).cpu().sum()
-    total_correct += correct.item()
-    total_testset += points.size()[0]
+            pred_choice = pred.data.max(1)[1]
+            correct = pred_choice.eq(target.data).cpu().sum()
+            test_correct += correct.item()
+            test_num += points.size()[0]
 
-print("final accuracy {}".format(total_correct / float(total_testset)))
+    ave_test_loss = test_loss / len(testdataloader) # all batch sizes may not be same
+    test_losses.append(ave_test_loss)
+    print('%s loss: %f accuracy: %f' % (blue('test'), ave_test_loss, test_correct/test_num))
+    
+    torch.save({'model_state_dict': classifier.state_dict(), 
+                'optimizer_state_dict': optimizer.state_dict(), 
+                'train_losses': train_losses,
+                'test_losses': test_losses,
+                'epochs': epochs},
+                '%s/pointnet_%d.pth' % (opt.outf, epoch))
+
+# plotting train and val losses
+ax1 = plt.subplot()
+ax1.plot(epochs, train_losses, label='train')
+ax1.plot(epochs, test_losses, label='test')
+
+ax1.set_ylabel('Loss')
+ax1.set_xlabel('Epoch')
+# ax1.set_yscale('log')
+ax1.legend()
+
+ax1.set_title(f"epochs={opt.nepoch}, batchsz={opt.batchSize}")
+plt.tight_layout()
+
+plt.savefig(f"cls/training.png")
