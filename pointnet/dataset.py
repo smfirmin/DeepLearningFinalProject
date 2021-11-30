@@ -172,7 +172,7 @@ class ModelNetDataset(data.Dataset):
             print('searching path', p, 'to convert .off files to .ply')
             l = list(p.glob('**/*.off'))
             for in_file in l:
-                # print(in_file)
+                print(in_file)
                 with in_file.open() as f:
                     # some OFF files in original dataset had OFF345 345 344 where 
                     # OFF collided with the number. Needs \n
@@ -186,8 +186,10 @@ class ModelNetDataset(data.Dataset):
                         f.write(lines)
 
                 mesh = meshio.read(in_file, file_format="off")
-                out_file = in_file.replace(in_file.with_suffix('.ply'))
-                # print(out_file)
+                # out_file = in_file.replace(in_file.with_suffix('.ply'))
+                out_file = in_file.with_suffix('.ply')
+
+                print(out_file)
                 mesh.write(out_file, file_format='ply')
 
     def __getitem__(self, index):
