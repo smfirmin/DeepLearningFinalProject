@@ -24,27 +24,27 @@ if DEVICE.type == 'cpu':
 blue = lambda x: '\033[94m' + x + '\033[0m'
 
 
-def get_dataset(dataset_type, dataset, num_points):
+def get_dataset(dataset_type, input_dataset, num_points):
     if dataset_type == 'shapenet':
         dataset = ShapeNetDataset(
-            root=dataset,
+            root=input_dataset,
             classification=True,
             npoints=num_points)
 
         test_dataset = ShapeNetDataset(
-            root=dataset,
+            root=input_dataset,
             classification=True,
             split='test',
             npoints=num_points,
             data_augmentation=False)
     elif dataset_type == 'modelnet40':
         dataset = ModelNetDataset(
-            root=dataset,
+            root=input_dataset,
             npoints=num_points,
             split='trainval')
 
         test_dataset = ModelNetDataset(
-            root=dataset,
+            root=input_dataset,
             split='test',
             npoints=num_points,
             data_augmentation=False)
@@ -191,8 +191,6 @@ def entry_train(cfg):
     plt.tight_layout()
 
     plt.savefig(f"cls/training.png")
-
-
 
 
 if __name__ == '__main__':
