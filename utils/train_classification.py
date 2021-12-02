@@ -51,6 +51,8 @@ if opt.dataset_type == 'shapenet':
         split='test',
         npoints=opt.num_points,
         data_augmentation=False)
+
+        
 elif opt.dataset_type == 'modelnet40':
     dataset = ModelNetDataset(
         root=opt.dataset,

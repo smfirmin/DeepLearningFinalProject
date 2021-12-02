@@ -37,6 +37,7 @@ def get_dataset(dataset_type, input_dataset, num_points):
             split='test',
             npoints=num_points,
             data_augmentation=False)
+
     elif dataset_type == 'modelnet40':
         dataset = ModelNetDataset(
             root=input_dataset,
@@ -53,7 +54,7 @@ def get_dataset(dataset_type, input_dataset, num_points):
 
     return dataset, test_dataset
 
-def get_model(model_name, dataset, task='cls'):
+def get_model(model_name, dataset, feature_transform, task='cls'):
     if model_name == 'simpleview':
 
         model = MVModel(
@@ -65,8 +66,8 @@ def get_model(model_name, dataset, task='cls'):
     elif model_name == 'pointnet':
 
         model = PointNetCls(
-            k=dataset.classes,
-            feature_transform=True)
+            k=len(dataset.classes),
+            feature_transform=feature_transform)
     else:
         raise KeyError("Invalid Model Type Specified")
 
@@ -95,7 +96,7 @@ def entry_train(cfg):
         )
 
 
-    model = get_model(cfg.model_name, cfg.dataset, task='cls')
+    model = get_model(cfg.model_name, dataset, feature_transform=cfg.feature_transform, task='cls')
     model.to(DEVICE)
 
     print(model)
@@ -198,7 +199,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--entry', type=str, default="train")
     parser.add_argument(
-        '--batchSize', type=int, default=32, help='input batch size')
+        '--batchSize', type=int, default=16, help='input batch size')
     parser.add_argument(
         '--num_points', type=int, default=2500, help='input batch size')
     parser.add_argument(
