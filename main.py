@@ -198,6 +198,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--entry', type=str, default="train")
     parser.add_argument(
+        '--batchSize', type=int, default=32, help='input batch size')
+    parser.add_argument(
         '--num_points', type=int, default=2500, help='input batch size')
     parser.add_argument(
         '--workers', type=int, help='number of data loading workers', default=4)
@@ -210,6 +212,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_type', type=str, default='modelnet40', help="dataset type shapenet|modelnet40")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     parser.add_argument('--seed', default=42)
+    parser.add_argument('--batchSize', default=42)
 
 
     cmd_args = parser.parse_args()
