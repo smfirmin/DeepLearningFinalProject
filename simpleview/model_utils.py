@@ -1,5 +1,4 @@
 import torch.nn as nn
-# from syncbn_pyt.modules.nn import BatchNorm2d as BatchNorm2dSync
 
 class Squeeze(nn.Module):
     def __init__(self):
@@ -14,7 +13,7 @@ class BatchNormPoint(nn.Module):
         self.feat_size = feat_size
         self.sync_bn=sync_bn
         if self.sync_bn:
-            self.bn = BatchNorm2dSync(feat_size)
+            self.bn = nn.BatchNorm2dSync(feat_size)
         else:
             self.bn = nn.BatchNorm1d(feat_size)
 

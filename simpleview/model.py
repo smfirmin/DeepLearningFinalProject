@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 from all_utils import DATASET_NUM_CLASS
-from models.model_utils import Squeeze, BatchNormPoint
-from models.mv_utils import PCViews
+from simpleview.model_utils import Squeeze, BatchNormPoint
+from simpleview.mv_utils import PCViews
 
 
 class MVModel(nn.Module):
@@ -60,7 +60,7 @@ class MVModel(nn.Module):
         Return layers for the image model
         """
 
-        from models.resnet import _resnet, BasicBlock
+        from simpleview.resnet import _resnet, BasicBlock
         assert backbone == 'resnet18'
         layers = [2, 2, 2, 2]
         block = BasicBlock
