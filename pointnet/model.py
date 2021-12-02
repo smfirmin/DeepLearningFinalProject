@@ -211,3 +211,19 @@ if __name__ == '__main__':
     seg = PointNetDenseCls(k = 3)
     out, _, _ = seg(sim_data)
     print('seg', out.size())
+
+
+# https://github.com/princeton-vl/SimpleView/blob/master/models/pointnet.py
+class PointNet(nn.Module):
+
+    def __init__(self, dataset, task):
+        super().__init__()
+        self.task = task
+        num_class = len(dataset.classes)
+        self.model =  PointNetCls(k=num_class, feature_transform=True)
+
+    def forward(self, pc, cls=None):
+        pc = pc.transpose(2, 1).float()
+        logit, _, trans_feat = self.model(pc)
+        out = {'logit': logit, 'trans_feat': trans_feat}
+        return out

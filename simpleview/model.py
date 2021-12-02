@@ -11,7 +11,7 @@ class MVModel(nn.Module):
         super().__init__()
         assert task == 'cls'
         self.task = task
-        self.num_class = dataset.classes
+        self.num_class = len(dataset.classes)
         self.dropout_p = 0.5
         self.feat_size = feat_size
 

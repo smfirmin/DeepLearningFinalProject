@@ -13,7 +13,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from pointnet.dataset import ModelNetDataset, ShapeNetDataset
-from pointnet.model import PointNetCls, feature_transform_regularizer
+from pointnet.model import PointNet, feature_transform_regularizer
 
 from simpleview.model import MVModel
 
@@ -65,9 +65,8 @@ def get_model(model_name, dataset, feature_transform, task='cls'):
 
     elif model_name == 'pointnet':
 
-        model = PointNetCls(
-            k=len(dataset.classes),
-            feature_transform=feature_transform)
+        model = PointNet(
+            dataset=dataset)
     else:
         raise KeyError("Invalid Model Type Specified")
 
@@ -130,18 +129,17 @@ def entry_train(cfg):
         for data in tqdm(dataloader):
             points, target = data
             target = target[:, 0]
-            points = points.transpose(2, 1)
             points, target = points.cuda(), target.cuda()
-            pred, trans, trans_feat = model(points)
-            loss = F.nll_loss(pred, target)
+            out = model(points)
+            loss = F.nll_loss(out['logit'], target)
             if cfg.feature_transform:
-                loss += feature_transform_regularizer(trans_feat) * 0.001
+                loss += feature_transform_regularizer(out['trans_feat']) * 0.001
             train_loss += loss.item()
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
-            pred_choice = pred.data.max(1)[1]
+            pred_choice = out['logit'].data.max(1)[1]
             correct = pred_choice.eq(target.data).cpu().sum()
             train_correct += correct.item()
             train_num += points.size()[0]
@@ -158,11 +156,11 @@ def entry_train(cfg):
                 target = target[:, 0]
                 points = points.transpose(2, 1)
                 points, target = points.cuda(), target.cuda()
-                pred, _, _ = model(points)
-                loss = F.nll_loss(pred, target)
+                out = model(points)
+                loss = F.nll_loss(out['logit'], target)
                 test_loss += loss.item()
 
-                pred_choice = pred.data.max(1)[1]
+                pred_choice = out['logit'].data.max(1)[1]
                 correct = pred_choice.eq(target.data).cpu().sum()
                 test_correct += correct.item()
                 test_num += points.size()[0]
@@ -199,7 +197,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--entry', type=str, default="train")
     parser.add_argument(
-        '--batchSize', type=int, default=16, help='input batch size')
+        '--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument(
         '--num_points', type=int, default=2500, help='input batch size')
     parser.add_argument(
