@@ -221,9 +221,6 @@ if __name__ == '__main__':
     torch.manual_seed(cmd_args.seed)
 
     if cmd_args.entry == "train":
-        assert not cmd_args.exp_config == ""
-        if not cmd_args.resume:
-            assert cmd_args.model_path == ""
 
         entry_train(cmd_args)
 

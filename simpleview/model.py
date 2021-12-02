@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from all_utils import DATASET_NUM_CLASS
 from simpleview.model_utils import Squeeze, BatchNormPoint
 from simpleview.mv_utils import PCViews
 
@@ -12,7 +11,7 @@ class MVModel(nn.Module):
         super().__init__()
         assert task == 'cls'
         self.task = task
-        self.num_class = DATASET_NUM_CLASS[dataset]
+        self.num_class = dataset.classes
         self.dropout_p = 0.5
         self.feat_size = feat_size
 
