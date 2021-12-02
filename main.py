@@ -212,8 +212,6 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_type', type=str, default='modelnet40', help="dataset type shapenet|modelnet40")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     parser.add_argument('--seed', default=42)
-    parser.add_argument('--batchSize', default=42)
-
 
     cmd_args = parser.parse_args()
 
