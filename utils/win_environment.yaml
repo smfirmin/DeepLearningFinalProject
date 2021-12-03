@@ -6,7 +6,9 @@ dependencies:
   - python=3.8
   - meshio
   - numpy
+  - matplotlib
   - pytorch
+  - torchvision
   - tqdm
   - pip
   - pip:

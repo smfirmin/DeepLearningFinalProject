@@ -154,7 +154,6 @@ def entry_train(cfg):
             for data in tqdm(testdataloader):
                 points, target = data
                 target = target[:, 0]
-                points = points.transpose(2, 1)
                 points, target = points.cuda(), target.cuda()
                 out = model(points)
                 loss = F.nll_loss(out['logit'], target)
