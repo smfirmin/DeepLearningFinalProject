@@ -42,7 +42,7 @@ class ModelNetDataset(data.Dataset):
                 self.fns.append(line.strip())
 
         self.cat = {}
-        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../misc/modelnet_id.txt'), 'r') as f:
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), './misc/modelnet_id.txt'), 'r') as f:
             for line in f:
                 ls = line.strip().split()
                 self.cat[ls[0]] = int(ls[1])
@@ -95,9 +95,8 @@ class ModelNetDataset(data.Dataset):
             rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
             point_set[:, [0, 2]] = point_set[:, [0, 2]].dot(rotation_matrix)  # random rotation
             point_set += np.random.normal(0, 0.02, size=point_set.shape)  # random jitter
-
-        if self.pointwolf:
-
+        
+        if self.PointWOLF is not None:
             origin, point_set = self.PointWOLF(point_set)
 
         point_set = torch.from_numpy(point_set.astype(np.float32))

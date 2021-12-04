@@ -33,23 +33,23 @@ def get_dataset(cfg):
 
         convert_data = True
 
-        for fname in os.listdir(os.path.join(cfg.input_dataset,"airplane", "test")):
+        for fname in os.listdir(os.path.join(cfg.dataset,"airplane", "test")):
             if fname.endswith('.ply'):
                 convert_data=False
                 break
         
         dataset = ModelNetDataset(
-            root=cfg.input_dataset,
+            root=cfg.dataset,
             cfg_args=cfg,
             npoints=cfg.num_points,
             split='trainval',
             data_augmentation=True,
-            pointwolf=cfg.pointwolf,
+            pointwolf=cfg.PointWOLF,
             convert_off_to_ply=convert_data
             )
 
         test_dataset = ModelNetDataset(
-            root=cfg.input_dataset,
+            root=cfg.dataset,
             cfg_args=cfg,
             split='test',
             npoints=cfg.num_points,
