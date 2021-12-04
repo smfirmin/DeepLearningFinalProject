@@ -66,7 +66,8 @@ def get_model(model_name, dataset, feature_transform, task='cls'):
     elif model_name == 'pointnet':
 
         model = PointNet(
-            dataset=dataset)
+            dataset=dataset,
+            task=task)
     else:
         raise KeyError("Invalid Model Type Specified")
 
@@ -129,11 +130,14 @@ def entry_train(cfg):
         for data in tqdm(dataloader):
             points, target = data
             target = target[:, 0]
+            
             points, target = points.cuda(), target.cuda()
             out = model(points)
-            loss = F.nll_loss(out['logit'], target)
+            
+            loss = F.cross_entropy(out['logit'], target)
             if cfg.feature_transform:
                 loss += feature_transform_regularizer(out['trans_feat']) * 0.001
+            
             train_loss += loss.item()
             optimizer.zero_grad()
             loss.backward()
@@ -156,7 +160,7 @@ def entry_train(cfg):
                 target = target[:, 0]
                 points, target = points.cuda(), target.cuda()
                 out = model(points)
-                loss = F.nll_loss(out['logit'], target)
+                loss = F.cross_entropy(out['logit'], target)
                 test_loss += loss.item()
 
                 pred_choice = out['logit'].data.max(1)[1]
