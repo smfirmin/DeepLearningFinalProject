@@ -181,7 +181,14 @@ def entry_train(cfg):
                 target = target[:, 0]
                 points, target = points.cuda(), target.cuda()
                 out = model(points)
-                loss = F.cross_entropy(out['logit'], target)
+
+                if cfg.model_name == 'pointnet':
+                    loss = F.cross_entropy(out['logit'], target)
+                elif cfg.model_name == 'simpleview':
+                    loss = smooth_loss(out['logit'], target)
+                else:
+                    raise TypeError("Unsupported Model Type")
+                    
                 test_loss += loss.item()
 
                 pred_choice = out['logit'].data.max(1)[1]
