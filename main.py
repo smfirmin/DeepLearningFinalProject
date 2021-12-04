@@ -1,5 +1,6 @@
 import argparse
 import random
+import os
 
 import numpy as np
 
@@ -39,16 +40,23 @@ def get_dataset(dataset_type, input_dataset, num_points):
             data_augmentation=False)
 
     elif dataset_type == 'modelnet40':
+        
+        convert_data = os.path.exists(os.path.join(input_dataset, "airplane", "test", "airplane_0627.ply"))
+
         dataset = ModelNetDataset(
             root=input_dataset,
             npoints=num_points,
-            split='trainval')
+            split='trainval',
+            data_augmentation=True,
+            convert_off_to_ply=convert_data
+            )
 
         test_dataset = ModelNetDataset(
             root=input_dataset,
             split='test',
             npoints=num_points,
-            data_augmentation=False)
+            data_augmentation=False,
+            convert_off_to_ply=convert_data)
     else:
         raise KeyError("Invalid Dataset Type Specified.")
 
