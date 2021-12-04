@@ -1,3 +1,4 @@
+# https://github.com/princeton-vl/SimpleView/blob/master/models/mv.py
 import torch
 import torch.nn as nn
 from simpleview.model_utils import Squeeze, BatchNormPoint

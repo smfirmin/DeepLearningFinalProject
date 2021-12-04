@@ -195,7 +195,7 @@ class ModelNetDataset(data.Dataset):
     def __getitem__(self, index):
         fn = self.fns[index]
         cls = self.cat[fn.split('/')[0]]
-        with open(os.path.join(self.root, fn), 'rb') as f: # HARDCODED TO MODELNET. THIS IS A PROBLEM.
+        with open(os.path.join(self.root, fn), 'rb') as f:
             plydata = PlyData.read(f)
         pts = np.vstack([plydata['vertex']['x'], plydata['vertex']['y'], plydata['vertex']['z']]).T
         choice = np.random.choice(len(pts), self.npoints, replace=True)

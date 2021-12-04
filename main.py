@@ -1,3 +1,4 @@
+# used as reference https://github.com/princeton-vl/SimpleView/blob/master/main.py
 import argparse
 import random
 import os
@@ -13,7 +14,7 @@ from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 
-from pointnet.dataset import ModelNetDataset, ShapeNetDataset
+from dataset import ModelNetDataset
 from pointnet.model import PointNet, feature_transform_regularizer
 
 from simpleview.model import MVModel
@@ -27,41 +28,31 @@ if DEVICE.type == 'cpu':
 blue = lambda x: '\033[94m' + x + '\033[0m'
 
 
-def get_dataset(dataset_type, input_dataset, num_points):
-    if dataset_type == 'shapenet':
-        dataset = ShapeNetDataset(
-            root=input_dataset,
-            classification=True,
-            npoints=num_points)
-
-        test_dataset = ShapeNetDataset(
-            root=input_dataset,
-            classification=True,
-            split='test',
-            npoints=num_points,
-            data_augmentation=False)
-
-    elif dataset_type == 'modelnet40':
+def get_dataset(cfg):
+    if cfg.dataset_type == 'modelnet40':
 
         convert_data = True
 
-        for fname in os.listdir(os.path.join(input_dataset,"airplane", "test")):
+        for fname in os.listdir(os.path.join(cfg.input_dataset,"airplane", "test")):
             if fname.endswith('.ply'):
                 convert_data=False
                 break
         
         dataset = ModelNetDataset(
-            root=input_dataset,
-            npoints=num_points,
+            root=cfg.input_dataset,
+            cfg_args=cfg,
+            npoints=cfg.num_points,
             split='trainval',
             data_augmentation=True,
+            pointwolf=cfg.pointwolf,
             convert_off_to_ply=convert_data
             )
 
         test_dataset = ModelNetDataset(
-            root=input_dataset,
+            root=cfg.input_dataset,
+            cfg_args=cfg,
             split='test',
-            npoints=num_points,
+            npoints=cfg.num_points,
             data_augmentation=False,
             convert_off_to_ply=convert_data)
     else:
@@ -88,9 +79,27 @@ def get_model(model_name, dataset, feature_transform, task='cls'):
 
     return model
 
+def run_forward(points, target, model, cfg):
+    target = target[:, 0]
+    
+    points, target = points.cuda(), target.cuda()
+    out = model(points)
+
+    if cfg.model_name == 'pointnet':
+        loss = F.cross_entropy(out['logit'], target)
+    elif cfg.model_name == 'simpleview':
+        loss = smooth_loss(out['logit'], target)
+    else:
+        raise TypeError("Unsupported Model Type")
+
+    if cfg.feature_transform:
+        loss += feature_transform_regularizer(out['trans_feat']) * 0.001
+
+    return out, loss
+
 def entry_train(cfg):
     
-    dataset, test_dataset = get_dataset(cfg.dataset_type, cfg.dataset, cfg.num_points)
+    dataset, test_dataset = get_dataset(cfg)
     
     dataloader = torch.utils.data.DataLoader(
         dataset,
@@ -144,22 +153,10 @@ def entry_train(cfg):
 
         for data in tqdm(dataloader):
             points, target = data
-            target = target[:, 0]
-            
-            points, target = points.cuda(), target.cuda()
-            out = model(points)
+            out, loss = run_forward(points, target, model, cfg)
 
-            if cfg.model_name == 'pointnet':
-                loss = F.cross_entropy(out['logit'], target)
-            elif cfg.model_name == 'simpleview':
-                loss = smooth_loss(out['logit'], target)
-            else:
-                raise TypeError("Unsupported Model Type")
-
-            if cfg.feature_transform:
-                loss += feature_transform_regularizer(out['trans_feat']) * 0.001
-            
             train_loss += loss.item()
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -176,19 +173,12 @@ def entry_train(cfg):
 
         with torch.no_grad():
             model.eval()
-            for data in tqdm(testdataloader):
-                points, target = data
-                target = target[:, 0]
-                points, target = points.cuda(), target.cuda()
-                out = model(points)
 
-                if cfg.model_name == 'pointnet':
-                    loss = F.cross_entropy(out['logit'], target)
-                elif cfg.model_name == 'simpleview':
-                    loss = smooth_loss(out['logit'], target)
-                else:
-                    raise TypeError("Unsupported Model Type")
-                    
+            for data in tqdm(testdataloader):
+
+                points, target = data
+                out, loss = run_forward(points, target, model, cfg)
+
                 test_loss += loss.item()
 
                 pred_choice = out['logit'].data.max(1)[1]
@@ -239,9 +229,20 @@ if __name__ == '__main__':
     parser.add_argument('--model_name', type=str, default="pointnet", help='model to run, pointnet|simpleview')
     parser.add_argument('--model', type=str, default='', help='model path')
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
-    parser.add_argument('--dataset_type', type=str, default='modelnet40', help="dataset type shapenet|modelnet40")
+    parser.add_argument('--dataset_type', type=str, default='modelnet40', help="dataset type shapenet")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     parser.add_argument('--seed', default=42)
+
+    # PointWOLF Arguments
+    parser.add_argument('--PointWOLF', action='store_true', help='Use PointWOLF')
+    
+    parser.add_argument('--w_num_anchor', type=int, default=4, help='Num of anchor point' ) 
+    parser.add_argument('--w_sample_type', type=str, default='fps', help='Sampling method for anchor point, option : (fps, random)') 
+    parser.add_argument('--w_sigma', type=float, default=0.5, help='Kernel bandwidth')  
+
+    parser.add_argument('--w_R_range', type=float, default=10, help='Maximum rotation range of local transformation')
+    parser.add_argument('--w_S_range', type=float, default=3, help='Maximum scailing range of local transformation')
+    parser.add_argument('--w_T_range', type=float, default=0.25, help='Maximum translation range of local transformation')
 
     cmd_args = parser.parse_args()
 
