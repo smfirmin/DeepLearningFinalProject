@@ -42,9 +42,14 @@ def get_dataset(dataset_type, input_dataset, num_points):
             data_augmentation=False)
 
     elif dataset_type == 'modelnet40':
-        
-        convert_data = os.path.exists(os.path.join(input_dataset, "airplane", "test", "airplane_0627.ply"))
 
+        convert_data = True
+
+        for fname in os.listdir(os.path.join(input_dataset,"airplane", "test")):
+            if fname.endswith('.ply'):
+                convert_data=False
+                break
+        
         dataset = ModelNetDataset(
             root=input_dataset,
             npoints=num_points,
@@ -143,7 +148,7 @@ def entry_train(cfg):
             
             points, target = points.cuda(), target.cuda()
             out = model(points)
-            
+
             if cfg.model_type == 'pointnet':
                 loss = F.cross_entropy(out['logit'], target)
             elif cfg.model_type == 'simpleview':
