@@ -162,7 +162,7 @@ def entry_train(cfg):
             optimizer.step()
             
             pred_choice = out['logit'].data.max(1)[1]
-            correct = pred_choice.eq(target.data).cpu().sum()
+            correct = pred_choice.eq(target.data).cuda().sum()
             train_correct += correct.item()
             train_num += points.size()[0]
 
@@ -182,7 +182,7 @@ def entry_train(cfg):
                 test_loss += loss.item()
 
                 pred_choice = out['logit'].data.max(1)[1]
-                correct = pred_choice.eq(target.data).cpu().sum()
+                correct = pred_choice.eq(target.data).cuda().sum()
                 test_correct += correct.item()
                 test_num += points.size()[0]
 
