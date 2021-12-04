@@ -18,6 +18,8 @@ from pointnet.model import PointNet, feature_transform_regularizer
 
 from simpleview.model import MVModel
 
+from utils.loss import smooth_loss
+
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if DEVICE.type == 'cpu':
     print(' Using CPU')
@@ -142,7 +144,13 @@ def entry_train(cfg):
             points, target = points.cuda(), target.cuda()
             out = model(points)
             
-            loss = F.cross_entropy(out['logit'], target)
+            if cfg.model_type == 'pointnet':
+                loss = F.cross_entropy(out['logit'], target)
+            elif cfg.model_type == 'simpleview':
+                loss = smooth_loss(out['logit'], target)
+            else:
+                raise TypeError("Unsupported Model Type")
+
             if cfg.feature_transform:
                 loss += feature_transform_regularizer(out['trans_feat']) * 0.001
             
