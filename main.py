@@ -133,8 +133,10 @@ def entry_train(cfg):
             out = model(points)
 
             if cfg.augment == 'rsmix':
-                loss_a = F.cross_entropy(out['logit'], target) * (1-lam)
-                loss_b = F.cross_entropy(out['logit'], target_b) * lam
+                print(lam)
+                print(type(lam))
+                loss_a = F.cross_entropy(out['logit'], target) #* (1-lam)
+                loss_b = F.cross_entropy(out['logit'], target_b) #* lam
                 loss = torch.add(loss_a, loss_b)
             else:
                 loss = F.cross_entropy(out['logit'], target)
