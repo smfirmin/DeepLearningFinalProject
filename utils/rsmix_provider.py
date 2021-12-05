@@ -174,7 +174,7 @@ def rsmix(data_batch, label_batch, beta=1.0, n_sample=512):
         
         
     # return data_batch_mixed, lam, label_a, label_b, cut_rad
-    return torch.from_numpy(data_batch_mixed), lam, torch.from_numpy(label_a), torch.from_numpy(label_b)
+    return torch.from_numpy(data_batch_mixed), torch.from_numpy(lam), torch.from_numpy(label_a), torch.from_numpy(label_b)
 
 
 def rsmix_for_part_seg(data_batch, beta=1.0, n_sample=1024):

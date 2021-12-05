@@ -125,7 +125,7 @@ def entry_train(cfg):
                 if cfg.beta > 0 and r < cfg.rsmix_prob:
                     n_sample = int(np.around(points.shape[1]/2))
                     points, lam, target, target_b = rsmix_provider.rsmix(points, target, beta=cfg.beta, n_sample=n_sample)
-                    points, target, target_b = points.cuda(), target.cuda(), target_b.cuda()
+                    points, lam, target, target_b = points.cuda(), lam.cuda(), target.cuda(), target_b.cuda()
                     # print('hello')
             else:
                 points, target = points.cuda(), target.cuda()
@@ -133,10 +133,8 @@ def entry_train(cfg):
             out = model(points)
 
             if cfg.augment == 'rsmix':
-                print(lam)
-                print(type(lam))
-                loss_a = F.cross_entropy(out['logit'], target) #* (1-lam)
-                loss_b = F.cross_entropy(out['logit'], target_b) #* lam
+                loss_a = F.cross_entropy(out['logit'], target) * (1-lam)
+                loss_b = F.cross_entropy(out['logit'], target_b) * lam
                 loss = torch.add(loss_a, loss_b)
             else:
                 loss = F.cross_entropy(out['logit'], target)
