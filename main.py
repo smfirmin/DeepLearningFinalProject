@@ -217,6 +217,9 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     parser.add_argument('--seed', default=42)
+    parser.add_argument('--augment', type=str, default=None, help='Augmentation method')
+    parser.add_argument('--beta', type=float, default=0.0, help='rsmix hyperparameter')
+    parser.add_argument('--rsmix_prob', type=float, default=0.5, help='rsmix hyperparameter')
 
     cmd_args = parser.parse_args()
 
