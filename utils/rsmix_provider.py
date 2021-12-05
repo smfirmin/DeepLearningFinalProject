@@ -150,12 +150,12 @@ def rsmix(data_batch, label_batch, beta=1.0, n_sample=512):
             tmp_pts_erased = np.delete(data_batch[i], pts_erase_idx_tmp, axis=0) # B x N-num_rad_1 x 3(or 6)
             # input("INPUT : ")
             tmp_pts_to_add = np.take(data_batch_rand[i], pts_add_idx_ctrled_tmp, axis=0)
-            print(type(query_dist))
-            print(type(tmp_pts_to_add))
-            print(query_dist[i].shape)
-            print(tmp_pts_to_add.shape)
-            print(query_dist[i])
-            print(tmp_pts_to_add[:,:3])
+            # print(type(query_dist))
+            # print(type(tmp_pts_to_add))
+            # print(query_dist[i].shape)
+            # print(tmp_pts_to_add.shape)
+            # print(query_dist[i])
+            # print(tmp_pts_to_add[:,:3])
             # tmp_pts_to_add[:,:3] = query_dist[i]+tmp_pts_to_add[:,:3]
             tmp_pts_to_add += query_dist[i]
             
@@ -174,7 +174,7 @@ def rsmix(data_batch, label_batch, beta=1.0, n_sample=512):
         
         
     # return data_batch_mixed, lam, label_a, label_b, cut_rad
-    return data_batch_mixed, lam, label_a, label_b
+    return torch.from_numpy(data_batch_mixed), lam, torch.from_numpy(label_a), torch.from_numpy(label_b)
 
 
 def rsmix_for_part_seg(data_batch, beta=1.0, n_sample=1024):
