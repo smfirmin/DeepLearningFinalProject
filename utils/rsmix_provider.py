@@ -5,6 +5,7 @@ import sys
 import numpy as np
 # import h5py
 # import tensorflow as tf
+import torch
 import random
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -83,12 +84,12 @@ def square_distance(src, dst):
     """
     B, N, _ = src.shape
     _, M, _ = dst.shape
-    # dist = -2 * torch.matmul(src, dst.permute(0, 2, 1))
-    # dist += torch.sum(src ** 2, -1).view(B, N, 1)
-    # dist += torch.sum(dst ** 2, -1).view(B, 1, M)
-    dist = -2 * np.matmul(src, dst.transpose(0, 2, 1))
-    dist += np.sum(src ** 2, -1).reshape(B, N, 1)
-    dist += np.sum(dst ** 2, -1).reshape(B, 1, M)
+    dist = -2 * torch.matmul(src, dst.permute(0, 2, 1))
+    dist += torch.sum(src ** 2, -1).view(B, N, 1)
+    dist += torch.sum(dst ** 2, -1).view(B, 1, M)
+    # dist = -2 * np.matmul(src, dst.transpose(0, 2, 1))
+    # dist += np.sum(src ** 2, -1).reshape(B, N, 1)
+    # dist += np.sum(dst ** 2, -1).reshape(B, 1, M)
     return dist
 
 
