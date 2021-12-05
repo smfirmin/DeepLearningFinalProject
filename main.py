@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 
-from pointnet.dataset import ModelNetDataset
+from dataset import ModelNetDataset
 from pointnet.model import PointNet, feature_transform_regularizer
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
