@@ -9,3 +9,4 @@ shapenetcore_partanno_segmentation_benchmark_v0/
 seg/
 *.egg-info/
 ModelNet40/
+.tmp*
