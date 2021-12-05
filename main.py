@@ -126,6 +126,7 @@ def entry_train(cfg):
                     n_sample = int(np.around(points.shape[1]/2))
                     points, lam, target, target_b = rsmix_provider.rsmix(points, target, beta=cfg.beta, n_sample=n_sample)
                     points, target, target_b = points.cuda(), target.cuda(), target_b.cuda()
+                    print('hello')
             else:
                 points, target = points.cuda(), target.cuda()
             
