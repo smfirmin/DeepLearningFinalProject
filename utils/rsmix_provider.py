@@ -152,12 +152,12 @@ def rsmix(data_batch, label_batch, beta=1.0, n_sample=512):
             tmp_pts_to_add = np.take(data_batch_rand[i], pts_add_idx_ctrled_tmp, axis=0)
             print(type(query_dist))
             print(type(tmp_pts_to_add))
-            print(query_dist.shape)
+            print(query_dist[i].shape)
             print(tmp_pts_to_add.shape)
             print(query_dist[i])
             print(tmp_pts_to_add[:,:3])
             # tmp_pts_to_add[:,:3] = query_dist[i]+tmp_pts_to_add[:,:3]
-            tmp_pts_to_add = query_dist[i]+tmp_pts_to_add[:,:3]
+            tmp_pts_to_add += query_dist[i]
             
             tmp_pts_replaced = np.expand_dims(np.vstack((tmp_pts_erased,tmp_pts_to_add)), axis=0)
             # lam is ratio of replaced data in generated sample
