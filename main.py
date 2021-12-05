@@ -13,9 +13,8 @@ from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 
-from dataset import ModelNetDataset
+from pointnet.dataset import ModelNetDataset
 from pointnet.model import PointNet, feature_transform_regularizer
-
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if DEVICE.type == 'cpu':
@@ -24,26 +23,27 @@ if DEVICE.type == 'cpu':
 blue = lambda x: '\033[94m' + x + '\033[0m'
 
 
-def get_dataset(cfg):
+def get_dataset(input_dataset, num_points):
+
     convert_data = True
 
-    for fname in os.listdir(os.path.join(cfg.dataset,"airplane", "test")):
+    for fname in os.listdir(os.path.join(input_dataset,"airplane", "test")):
         if fname.endswith('.ply'):
             convert_data=False
             break
     
     dataset = ModelNetDataset(
-        root=cfg.dataset,
-        npoints=cfg.num_points,
+        root=input_dataset,
+        npoints=num_points,
         split='trainval',
         data_augmentation=True,
         convert_off_to_ply=convert_data
         )
 
     test_dataset = ModelNetDataset(
-        root=cfg.dataset,
+        root=input_dataset,
         split='test',
-        npoints=cfg.num_points,
+        npoints=num_points,
         data_augmentation=False,
         convert_off_to_ply=convert_data)
 
@@ -51,28 +51,15 @@ def get_dataset(cfg):
 
 def get_model(dataset, task='cls'):
 
-    return PointNet(
+    model = PointNet(
         dataset=dataset,
         task=task)
 
-
-def run_forward(points, target, model, cfg):
-    target = target[:, 0]
-    
-    points, target = points.cuda(), target.cuda()
-    out = model(points)
-
-    loss = F.cross_entropy(out['logit'], target)
-
-    if cfg.feature_transform:
-        loss += feature_transform_regularizer(out['trans_feat']) * 0.001
-
-    return out, loss
-
+    return model
 
 def entry_train(cfg):
     
-    dataset, test_dataset = get_dataset(cfg)
+    dataset, test_dataset = get_dataset(cfg.dataset, cfg.num_points)
     
     dataloader = torch.utils.data.DataLoader(
         dataset,
@@ -126,16 +113,23 @@ def entry_train(cfg):
 
         for data in tqdm(dataloader):
             points, target = data
-            out, loss = run_forward(points, target, model, cfg)
+            target = target[:, 0]
+            
+            points, target = points.cuda(), target.cuda()
+            out = model(points)
 
+            loss = F.cross_entropy(out['logit'], target)
+
+            if cfg.feature_transform:
+                loss += feature_transform_regularizer(out['trans_feat']) * 0.001
+            
             train_loss += loss.item()
-
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
             pred_choice = out['logit'].data.max(1)[1]
-            correct = pred_choice.eq(target.data).to(DEVICE).sum()
+            correct = pred_choice.eq(target.data).cpu().sum()
             train_correct += correct.item()
             train_num += points.size()[0]
 
@@ -146,16 +140,18 @@ def entry_train(cfg):
 
         with torch.no_grad():
             model.eval()
-
             for data in tqdm(testdataloader):
-
                 points, target = data
-                out, loss = run_forward(points, target, model, cfg)
+                target = target[:, 0]
+                points, target = points.cuda(), target.cuda()
+                out = model(points)
+
+                loss = F.cross_entropy(out['logit'], target)
 
                 test_loss += loss.item()
 
                 pred_choice = out['logit'].data.max(1)[1]
-                correct = pred_choice.eq(target.data).to(DEVICE).sum()
+                correct = pred_choice.eq(target.data).cpu().sum()
                 test_correct += correct.item()
                 test_num += points.size()[0]
 
@@ -199,10 +195,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--nepoch', type=int, default=250, help='number of epochs to train for')
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
-    parser.add_argument('--model_name', type=str, default="pointnet", help='model to run, pointnet|simpleview')
     parser.add_argument('--model', type=str, default='', help='model path')
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
-    parser.add_argument('--dataset_type', type=str, default='modelnet40', help="dataset type shapenet")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     parser.add_argument('--seed', default=42)
 
