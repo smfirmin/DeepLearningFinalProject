@@ -26,12 +26,12 @@ def gen_modelnet_id(root):
 class ModelNetDataset(data.Dataset):
     def __init__(self,
                  root,
-                 npoints=2500,
+                 percent_points=1,
                  split='train',
                  data_augmentation=True,
                  convert_off_to_ply=True,
                  pointwolf=False):
-        self.npoints = npoints
+        self.percent_points = percent_points
         self.root = root
         self.split = split
         self.data_augmentation = data_augmentation
@@ -84,8 +84,10 @@ class ModelNetDataset(data.Dataset):
             plydata = PlyData.read(f)
         pts = np.vstack([plydata['vertex']['x'], plydata['vertex']['y'], plydata['vertex']['z']]).T
 
+        npoints = self.percent_points * len(pts)
+
         # I think we can experiment with this ordering
-        choice = np.random.choice(len(pts), self.npoints, replace=True)
+        choice = np.random.choice(len(pts), npoints, replace=True)
         point_set = pts[choice, :]
 
         point_set = point_set - np.expand_dims(np.mean(point_set, axis=0), 0)  # center
@@ -93,8 +95,8 @@ class ModelNetDataset(data.Dataset):
         point_set = point_set / dist  # scale
 
         if self.data_augmentation:
-            theta = np.random.uniform(0, np.pi * 2)
-            rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+            # theta = np.random.uniform(0, np.pi * 2)
+            # rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
             # point_set[:, [0, 2]] = point_set[:, [0, 2]].dot(rotation_matrix)  # random rotation
             point_set += np.random.normal(0, 0.02, size=point_set.shape)  # random jitter
 
