@@ -87,10 +87,7 @@ def square_distance(src, dst):
     # dist = -2 * torch.matmul(src, dst.permute(0, 2, 1))
     # dist += torch.sum(src ** 2, -1).view(B, N, 1)
     # dist += torch.sum(dst ** 2, -1).view(B, 1, M)
-    print(src.shape)
     dist = -2 * np.matmul(src, dst.permute(0, 2, 1))
-    print(dist.shape)
-    print(torch.sum(dst ** 2, -1))
     dist += np.sum(src ** 2, -1).reshape(B, N, 1)
     dist += torch.sum(dst ** 2, -1).reshape(B, 1, M)
     return dist
@@ -153,6 +150,10 @@ def rsmix(data_batch, label_batch, beta=1.0, n_sample=512):
             tmp_pts_erased = np.delete(data_batch[i], pts_erase_idx_tmp, axis=0) # B x N-num_rad_1 x 3(or 6)
             # input("INPUT : ")
             tmp_pts_to_add = np.take(data_batch_rand[i], pts_add_idx_ctrled_tmp, axis=0)
+            print(type(query_dist))
+            print(type(tmp_pts_to_add))
+            print(query_dist.shape)
+            print(tmp_pts_to_add.shape)
             tmp_pts_to_add[:,:3] = query_dist[i]+tmp_pts_to_add[:,:3]
             
             tmp_pts_replaced = np.expand_dims(np.vstack((tmp_pts_erased,tmp_pts_to_add)), axis=0)
