@@ -92,7 +92,7 @@ def square_distance(src, dst):
     print(dist.shape)
     print(torch.sum(dst ** 2, -1))
     dist += np.sum(src ** 2, -1).reshape(B, N, 1)
-    dist += np.sum(dst ** 2, -1).reshape(B, 1, M)
+    dist += torch.sum(dst ** 2, -1).reshape(B, 1, M)
     return dist
 
 
