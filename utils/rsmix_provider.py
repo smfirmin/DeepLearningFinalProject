@@ -32,7 +32,7 @@ def cut_points(data_batch, idx, radius, nsample=512):
     for i in range(B):
         query_points[i][0]=data_batch[i][idx[i][0]] # Bx1x3(=6 with normal)
     # B x n_sample
-    group_idx = query_ball_point_for_point_mix(radius, nsample, data_batch[:,:,:3], query_points[:,:,:3])
+    group_idx = query_ball_point_for_rsmix(radius, nsample, data_batch[:,:,:3], query_points[:,:,:3])
     return group_idx, query_points # group_idx: 16x?x6, query_points: 16x1x6
 
 
