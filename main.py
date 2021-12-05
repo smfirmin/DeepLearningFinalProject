@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 from dataset import ModelNetDataset
 from pointnet.model import PointNet, feature_transform_regularizer
 
+import utils.rsmix_provider as rsmix_provider
+
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if DEVICE.type == 'cpu':
     print(' Using CPU')
@@ -114,11 +116,27 @@ def entry_train(cfg):
         for data in tqdm(dataloader):
             points, target = data
             target = target[:, 0]
+
+            if cfg.augment == 'rsmix':
+                r = np.random.rand(1)
+                # r = 0.1 # for debug
+                # if convda: batch_data = self._augment_batch_data(batch_data, shuffle=shuffle, jitter=jitter, rot=rot, rdscale=rdscale, shift=shift)
+                # if rddrop: batch_data = self._rddrop_batch_data(batch_data)
+                if cfg.beta > 0 and r < cfg.rsmix_prob:
+                    n_sample = int(np.around(points.shape[1]/2))
+                    points, lam, target, target_b = rsmix_provider.rsmix(points, target, beta=cfg.beta, n_sample=n_sample)
+                    points, target, target_b = points.cuda(), target.cuda(), target_b.cuda()
+            else:
+                points, target = points.cuda(), target.cuda()
             
-            points, target = points.cuda(), target.cuda()
             out = model(points)
 
-            loss = F.cross_entropy(out['logit'], target)
+            if cfg.augment == 'rsmix':
+                loss_a = F.cross_entropy(out['logit'], target) * (1-lam)
+                loss_b = F.cross_entropy(out['logit'], target_b) * lam
+                loss = torch.add(loss_a, loss_b)
+            else:
+                loss = F.cross_entropy(out['logit'], target)
 
             if cfg.feature_transform:
                 loss += feature_transform_regularizer(out['trans_feat']) * 0.001
