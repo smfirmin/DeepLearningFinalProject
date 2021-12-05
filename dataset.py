@@ -84,7 +84,8 @@ class ModelNetDataset(data.Dataset):
             plydata = PlyData.read(f)
         pts = np.vstack([plydata['vertex']['x'], plydata['vertex']['y'], plydata['vertex']['z']]).T
 
-        npoints = self.percent_points * len(pts)
+        # npoints = self.percent_points * len(pts)
+        npoints = 2500
 
         # I think we can experiment with this ordering
         choice = np.random.choice(len(pts), npoints, replace=True)
