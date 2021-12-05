@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 
-from pointnet.dataset import ModelNetDataset
+from dataset import ModelNetDataset
 from pointnet.model import PointNet, feature_transform_regularizer
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -23,7 +23,7 @@ if DEVICE.type == 'cpu':
 blue = lambda x: '\033[94m' + x + '\033[0m'
 
 
-def get_dataset(input_dataset, num_points):
+def get_dataset(input_dataset, num_points, pointwolf):
 
     convert_data = True
 
@@ -37,7 +37,8 @@ def get_dataset(input_dataset, num_points):
         npoints=num_points,
         split='trainval',
         data_augmentation=True,
-        convert_off_to_ply=convert_data
+        convert_off_to_ply=convert_data,
+        pointwolf=pointwolf
         )
 
     test_dataset = ModelNetDataset(
@@ -59,7 +60,7 @@ def get_model(dataset, task='cls'):
 
 def entry_train(cfg):
     
-    dataset, test_dataset = get_dataset(cfg.dataset, cfg.num_points)
+    dataset, test_dataset = get_dataset(cfg.dataset, cfg.num_points, cfg.pointwolf)
     
     dataloader = torch.utils.data.DataLoader(
         dataset,
@@ -200,6 +201,9 @@ if __name__ == '__main__':
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     parser.add_argument('--seed', default=42)
 
+    # PointWOLF settings
+    parser.add_argument('--pointwolf', help='Use PointWOLF')
+    
     cmd_args = parser.parse_args()
 
     random.seed(cmd_args.seed)

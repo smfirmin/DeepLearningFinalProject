@@ -10,6 +10,8 @@ import sys
 import json
 from plyfile import PlyData
 
+from augmentation.pointwolf import PointWOLF
+
 def gen_modelnet_id(root):
     classes = []
     with open(os.path.join(root, 'train.txt'), 'r') as f:
@@ -27,12 +29,16 @@ class ModelNetDataset(data.Dataset):
                  npoints=2500,
                  split='train',
                  data_augmentation=True,
-                 convert_off_to_ply=True):
+                 convert_off_to_ply=True,
+                 pointwolf=False):
         self.npoints = npoints
         self.root = root
         self.split = split
         self.data_augmentation = data_augmentation
         self.fns = []
+
+        self.pointwolf = PointWOLF() if pointwolf else None
+
         with open(os.path.join(root, '{}.txt'.format(self.split)), 'r') as f:
             for line in f:
                 self.fns.append(line.strip())
@@ -89,8 +95,11 @@ class ModelNetDataset(data.Dataset):
         if self.data_augmentation:
             theta = np.random.uniform(0, np.pi * 2)
             rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-            point_set[:, [0, 2]] = point_set[:, [0, 2]].dot(rotation_matrix)  # random rotation
+            # point_set[:, [0, 2]] = point_set[:, [0, 2]].dot(rotation_matrix)  # random rotation
             point_set += np.random.normal(0, 0.02, size=point_set.shape)  # random jitter
+
+        if self.pointwolf is not None:
+                origin, point_set = self.PointWOLF(point_set)
 
         point_set = torch.from_numpy(point_set.astype(np.float32))
         cls = torch.from_numpy(np.array([cls]).astype(np.int64))
