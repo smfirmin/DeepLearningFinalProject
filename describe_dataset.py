@@ -7,23 +7,10 @@ import argparse
 
 import matplotlib.pyplot as plt
 
-from augmentation.pointwolf import PointWOLF
-
-def gen_modelnet_id(root):
-    classes = []
-    with open(os.path.join(root, 'train.txt'), 'r') as f:
-        for line in f:
-            classes.append(line.strip().split('/')[0])
-    classes = np.unique(classes)
-    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../misc/modelnet_id.txt'), 'w') as f:
-        for i in range(len(classes)):
-            f.write('{}\t{}\n'.format(classes[i], i))
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default="ModelNet40")
-
 
     args = parser.parse_args()
 
@@ -53,9 +40,11 @@ if __name__ == '__main__':
 
         class_counts[cls_str].append(len(pts))
 
+    max_points = {key: max(values) for key, values in class_counts.items()}
+    number_of_examples = {key: len(values) for key, values in class_counts.items()}
 
-    max_points = {key: max(values) for key, values in cat.items()}
-    number_of_examples = {key: len(values) for key, values in cat.items()}
-
-    import pdb
-    pdb.set_trace()
+    plt.bar(range(len(max_points)), list(max_points.values()), align='center')
+    plt.xticks(range(len(max_points)), list(max_points.keys()))
+    plt.xticks(rotation=45)
+    
+    plt.savefig("max_points.png")
