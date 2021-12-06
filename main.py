@@ -126,7 +126,10 @@ def entry_train(cfg):
                     n_sample = int(np.around(points.shape[1]/2))
                     points, lam, target, target_b = rsmix_provider.rsmix(points, target, beta=cfg.beta, n_sample=n_sample)
                     points, lam, target, target_b = points.cuda(), lam.cuda(), target.cuda(), target_b.cuda()
-                    
+                else:
+                    lam = torch.from_numpy(np.zeros(points.shape[0],dtype=float))
+                    target_b = target
+                    points, lam, target, target_b = points.cuda(), lam.cuda(), target.cuda(), target_b.cuda()
             else:
                 points, target = points.cuda(), target.cuda()
             
