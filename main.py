@@ -118,15 +118,15 @@ def entry_train(cfg):
             target = target[:, 0]
 
             if cfg.augment == 'rsmix':
-                # r = np.random.rand(1)
-                r = 0.1 # for debug
+                r = np.random.rand(1)
+                # r = 0.1 # for debug
                 # if convda: batch_data = self._augment_batch_data(batch_data, shuffle=shuffle, jitter=jitter, rot=rot, rdscale=rdscale, shift=shift)
                 # if rddrop: batch_data = self._rddrop_batch_data(batch_data)
                 if cfg.beta > 0 and r < cfg.rsmix_prob:
                     n_sample = int(np.around(points.shape[1]/2))
                     points, lam, target, target_b = rsmix_provider.rsmix(points, target, beta=cfg.beta, n_sample=n_sample)
                     points, lam, target, target_b = points.cuda(), lam.cuda(), target.cuda(), target_b.cuda()
-                    # print('hello')
+                    
             else:
                 points, target = points.cuda(), target.cuda()
             
