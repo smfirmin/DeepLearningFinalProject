@@ -1,0 +1,15 @@
+git+git://github.com/erikwijmans/etw_pytorch_utils.git@v1.1.1#egg=etw_pytorch_utils
+h5py
+numpy
+msgpack-numpy
+torch>=1.0
+torchvision
+pprint
+enum34
+future
+pykeops
+geomloss
+lmdb
+h5py
+hydra-core==0.11.3
+pytorch-lightning==0.7.1
