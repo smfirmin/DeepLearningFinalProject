@@ -17,7 +17,8 @@ except:
     import __builtin__ as builtins
 
 try:
-    import pointnet2_ops_lib._ext as _ext
+    # import pointnet2._ext as _ext
+    import _ext as _ext
 except ImportError:
     if not getattr(builtins, "__POINTNET2_SETUP__", False):
         raise ImportError(
