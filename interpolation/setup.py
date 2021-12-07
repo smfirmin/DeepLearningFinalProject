@@ -6,7 +6,7 @@ import shutil
 
 import pointnet2
 
-requirements = ["hydra-core==0.11.3", "pytorch-lightning==0.7.1", "h5py", "pprint", "enum34", "future"]
+requirements = ["hydra-core==0.11.3", "pytorch-lightning==0.7.1", "h5py", "enum34", "future"]
 
 setup(
     name="pointnet2",
