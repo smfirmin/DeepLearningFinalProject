@@ -23,7 +23,7 @@ if DEVICE.type == 'cpu':
 blue = lambda x: '\033[94m' + x + '\033[0m'
 
 
-def get_dataset(input_dataset, percent_points, pointwolf):
+def get_dataset(input_dataset, npoints, pointwolf):
 
     convert_data = True
 
@@ -34,7 +34,7 @@ def get_dataset(input_dataset, percent_points, pointwolf):
     
     dataset = ModelNetDataset(
         root=input_dataset,
-        percent_points=percent_points,
+        npoints=npoints,
         split='trainval',
         data_augmentation=True,
         convert_off_to_ply=convert_data,
@@ -44,7 +44,7 @@ def get_dataset(input_dataset, percent_points, pointwolf):
     test_dataset = ModelNetDataset(
         root=input_dataset,
         split='test',
-        percent_points=percent_points,
+        npoints=npoints,
         data_augmentation=False,
         convert_off_to_ply=convert_data)
 
@@ -60,7 +60,7 @@ def get_model(dataset, task='cls'):
 
 def entry_train(cfg):
     
-    dataset, test_dataset = get_dataset(cfg.dataset, cfg.percent_points, cfg.pointwolf)
+    dataset, test_dataset = get_dataset(cfg.dataset, cfg.npoints, cfg.pointwolf)
     
     dataloader = torch.utils.data.DataLoader(
         dataset,
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument(
-        '--percent_points', type=int, default=1, help='input batch size')
+        '--npoints', type=int, default=1, help='input batch size')
     parser.add_argument(
         '--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument(

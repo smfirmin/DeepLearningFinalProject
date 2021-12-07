@@ -26,12 +26,12 @@ def gen_modelnet_id(root):
 class ModelNetDataset(data.Dataset):
     def __init__(self,
                  root,
-                 percent_points=1,
+                 npoints=1,
                  split='train',
                  data_augmentation=True,
                  convert_off_to_ply=True,
                  pointwolf=False):
-        self.percent_points = percent_points
+        self.npoints = npoints
         self.root = root
         self.split = split
         self.data_augmentation = data_augmentation
@@ -84,11 +84,8 @@ class ModelNetDataset(data.Dataset):
             plydata = PlyData.read(f)
         pts = np.vstack([plydata['vertex']['x'], plydata['vertex']['y'], plydata['vertex']['z']]).T
 
-        # npoints = self.percent_points * len(pts)
-        npoints = 2500
-
         # I think we can experiment with this ordering
-        choice = np.random.choice(len(pts), npoints, replace=True)
+        choice = np.random.choice(len(pts), self.npoints, replace=True)
         point_set = pts[choice, :]
 
         point_set = point_set - np.expand_dims(np.mean(point_set, axis=0), 0)  # center
