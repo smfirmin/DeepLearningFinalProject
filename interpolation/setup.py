@@ -10,7 +10,7 @@ requirements = ["hydra-core==0.11.3", "pytorch-lightning==0.7.1", "h5py", "pprin
 
 setup(
     name="pointnet2",
-    version=__version__,
+    version=1.0,
     author="Erik Wijmans",
     packages=find_packages(),
     install_requires=requirements,
