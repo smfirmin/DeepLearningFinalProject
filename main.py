@@ -59,7 +59,7 @@ def get_model(dataset, device, task='cls'):
 
     return model
 
-def entry_train(cfg):
+def entry_train(cfg, device):
     
     dataset, test_dataset = get_dataset(cfg.dataset, cfg.npoints, cfg.pointwolf)
     
@@ -82,8 +82,8 @@ def entry_train(cfg):
         )
 
 
-    model = get_model(dataset, DEVICE, task='cls')
-    model.to(DEVICE)
+    model = get_model(dataset, device, task='cls')
+    model.to(device)
 
     print(model)
 
@@ -117,13 +117,13 @@ def entry_train(cfg):
             points, target = data
             target = target[:, 0]
             
-            points, target = points.cuda(), target.cuda()
+            points, target = points.to(device), target.to(device)
             out = model(points)
 
             loss = F.cross_entropy(out['logit'], target)
 
             if cfg.feature_transform:
-                loss += feature_transform_regularizer(out['trans_feat'], DEVICE) * 0.001
+                loss += feature_transform_regularizer(out['trans_feat'], device) * 0.001
             
             train_loss += loss.item()
             optimizer.zero_grad()
@@ -213,7 +213,7 @@ if __name__ == '__main__':
 
     if cmd_args.entry == "train":
 
-        entry_train(cmd_args)
+        entry_train(cmd_args, DEVICE)
 
     elif cmd_args.entry in ["test", "valid"]:
 

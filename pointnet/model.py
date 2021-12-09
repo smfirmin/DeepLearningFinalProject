@@ -149,11 +149,12 @@ class PointNetCls(nn.Module):
 
 
 class PointNetDenseCls(nn.Module):
-    def __init__(self, k = 2, feature_transform=False):
+    def __init__(self, device, k = 2, feature_transform=False):
         super(PointNetDenseCls, self).__init__()
         self.k = k
+        self.device = device
         self.feature_transform=feature_transform
-        self.feat = PointNetfeat(global_feat=False, feature_transform=feature_transform)
+        self.feat = PointNetfeat(self.device, global_feat=False, feature_transform=feature_transform)
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
@@ -190,30 +191,30 @@ if __name__ == '__main__':
         print(' Using CPU')
 
     sim_data = torch.rand(32,3,2500)
-    trans = STN3d()
+    trans = STN3d(DEVICE)
     out = trans(sim_data)
     print('stn', out.size())
     print('loss', feature_transform_regularizer(out, DEVICE))
 
     sim_data_64d = torch.rand(32, 64, 2500)
-    trans = STNkd(k=64)
+    trans = STNkd(DEVICE, k=64)
     out = trans(sim_data_64d)
     print('stn64d', out.size())
     print('loss', feature_transform_regularizer(out, DEVICE))
 
-    pointfeat = PointNetfeat(global_feat=True)
+    pointfeat = PointNetfeat(DEVICE, global_feat=True)
     out, _, _ = pointfeat(sim_data)
     print('global feat', out.size())
 
-    pointfeat = PointNetfeat(global_feat=False)
+    pointfeat = PointNetfeat(DEVICE, global_feat=False)
     out, _, _ = pointfeat(sim_data)
     print('point feat', out.size())
 
-    cls = PointNetCls(k = 5)
+    cls = PointNetCls(DEVICE, k = 5)
     out, _, _ = cls(sim_data)
     print('class', out.size())
 
-    seg = PointNetDenseCls(k = 3)
+    seg = PointNetDenseCls(DEVICE, k = 3)
     out, _, _ = seg(sim_data)
     print('seg', out.size())
 
