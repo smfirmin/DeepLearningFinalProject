@@ -177,7 +177,7 @@ def entry_train(cfg):
     # ax1.set_yscale('log')
     ax1.legend()
 
-    ax1.set_title(f"epochs={cfg.nepoch}, batchsz={cfg.batchSize}")
+    ax1.set_title(f"epochs={len(epochs)}, batchsz={cfg.batchSize}")
     plt.tight_layout()
 
     plt.savefig(f"cls/training.png")
@@ -190,11 +190,11 @@ if __name__ == '__main__':
     parser.add_argument(
         '--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument(
-        '--npoints', type=int, default=1, help='input batch size')
+        '--npoints', type=int, default=2500, help='input batch size')
     parser.add_argument(
         '--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument(
-        '--nepoch', type=int, default=250, help='number of epochs to train for')
+        '--nepoch', type=int, default=50, help='number of epochs to train for')
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
