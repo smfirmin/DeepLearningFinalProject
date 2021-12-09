@@ -50,11 +50,12 @@ def get_dataset(input_dataset, npoints, pointwolf):
 
     return dataset, test_dataset
 
-def get_model(dataset, task='cls'):
+def get_model(dataset, device, task='cls'):
 
     model = PointNet(
         dataset=dataset,
-        task=task)
+        task=task,
+        device=device)
 
     return model
 
@@ -81,7 +82,7 @@ def entry_train(cfg):
         )
 
 
-    model = get_model(dataset, task='cls')
+    model = get_model(dataset, DEVICE, task='cls')
     model.to(DEVICE)
 
     print(model)
@@ -122,7 +123,7 @@ def entry_train(cfg):
             loss = F.cross_entropy(out['logit'], target)
 
             if cfg.feature_transform:
-                loss += feature_transform_regularizer(out['trans_feat']) * 0.001
+                loss += feature_transform_regularizer(out['trans_feat'], DEVICE) * 0.001
             
             train_loss += loss.item()
             optimizer.zero_grad()
