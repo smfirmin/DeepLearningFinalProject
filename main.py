@@ -190,7 +190,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument(
-        '--npoints', type=int, default=1, help='input batch size')
+        '--npoints', type=int, default=2500, help='input batch size')
     parser.add_argument(
         '--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument(
