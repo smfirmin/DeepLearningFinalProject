@@ -3,7 +3,8 @@ channels:
   - defaults
   - pytorch
 dependencies:
-  - meshio
+  # - meshio # will need to install afterwards with `conda install -c conda-forge meshio`
+  - matplotlib
   - numpy
   - pytorch
   - tqdm

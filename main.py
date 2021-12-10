@@ -50,15 +50,16 @@ def get_dataset(input_dataset, npoints, pointwolf):
 
     return dataset, test_dataset
 
-def get_model(dataset, task='cls'):
+def get_model(dataset, device, task='cls'):
 
     model = PointNet(
         dataset=dataset,
-        task=task)
+        task=task,
+        device=device)
 
     return model
 
-def entry_train(cfg):
+def entry_train(cfg, device):
     
     dataset, test_dataset = get_dataset(cfg.dataset, cfg.npoints, cfg.pointwolf)
     
@@ -81,8 +82,8 @@ def entry_train(cfg):
         )
 
 
-    model = get_model(dataset, task='cls')
-    model.to(DEVICE)
+    model = get_model(dataset, device, task='cls')
+    model.to(device)
 
     print(model)
 
@@ -116,13 +117,13 @@ def entry_train(cfg):
             points, target = data
             target = target[:, 0]
             
-            points, target = points.cuda(), target.cuda()
+            points, target = points.to(device), target.to(device)
             out = model(points)
 
             loss = F.cross_entropy(out['logit'], target)
 
             if cfg.feature_transform:
-                loss += feature_transform_regularizer(out['trans_feat']) * 0.001
+                loss += feature_transform_regularizer(out['trans_feat'], device) * 0.001
             
             train_loss += loss.item()
             optimizer.zero_grad()
@@ -177,7 +178,7 @@ def entry_train(cfg):
     # ax1.set_yscale('log')
     ax1.legend()
 
-    ax1.set_title(f"epochs={cfg.nepoch}, batchsz={cfg.batchSize}")
+    ax1.set_title(f"epochs={len(epochs)}, batchsz={cfg.batchSize}")
     plt.tight_layout()
 
     plt.savefig(f"cls/training.png")
@@ -194,7 +195,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument(
-        '--nepoch', type=int, default=250, help='number of epochs to train for')
+        '--nepoch', type=int, default=50, help='number of epochs to train for')
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
@@ -212,7 +213,7 @@ if __name__ == '__main__':
 
     if cmd_args.entry == "train":
 
-        entry_train(cmd_args)
+        entry_train(cmd_args, DEVICE)
 
     elif cmd_args.entry in ["test", "valid"]:
 

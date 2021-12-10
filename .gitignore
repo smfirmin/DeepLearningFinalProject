@@ -10,3 +10,5 @@ seg/
 *.egg-info/
 ModelNet40/
 .tmp*
+ModelNet40.zip
+.vscode/settings.json
