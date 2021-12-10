@@ -27,6 +27,9 @@ class STN3d(nn.Module):
 
 
     def forward(self, x):
+        """
+        x: [batch_size, dimension, npoints]
+        """
         batchsize = x.size()[0]
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
@@ -66,6 +69,9 @@ class STNkd(nn.Module):
         self.k = k
 
     def forward(self, x):
+        """
+        x: [batch_size, dimension, npoints]
+        """
         batchsize = x.size()[0]
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
@@ -83,8 +89,36 @@ class STNkd(nn.Module):
         x = x.view(-1, self.k, self.k)
         return x
 
+class AttnEncoderBlock(nn.Module):
+    def __init__(self, device, embed_dim=64, num_heads=1, norm='batch1d', dim_ff=128):
+        super(AttnEncoderBlock, self).__init__()
+        self.device = device
+        self.num_heads = num_heads
+        self.embed_dim = embed_dim
+        self.dim_ff = dim_ff
+        self.attn = nn.MultiheadAttention(embed_dim=self.embed_dim, num_heads=self.num_heads, batch_first=True)
+        self.ff1 = nn.Linear(64, self.dim_ff)
+        self.ff2 = nn.Linear(self.dim_ff, 64)
+        self.relu = nn.ReLU()
+
+        if norm == "batch1d":
+            self.norm1 = nn.BatchNorm1d(2500)
+            self.norm2 = nn.BatchNorm1d(2500)
+        elif norm == "layer":
+            self.norm1 = nn.LayerNorm(64)
+            self.norm2 = nn.LayerNorm(64)
+
+    def forward(self, x):
+        x = x.transpose(2, 1)
+        sa = self.attn(x,x,x)[0]
+        x = self.norm1(x + sa)
+        x = self.norm2(x + self.ff2(self.relu(self.ff1(x))))
+        x = x.transpose(2, 1)
+        return x
+
+
 class PointNetfeat(nn.Module):
-    def __init__(self, device, global_feat = True, feature_transform = False):
+    def __init__(self, device, global_feat = True, feature_transform = False, attention = False):
         super(PointNetfeat, self).__init__()
         self.device = device
         self.stn = STN3d(self.device)
@@ -96,10 +130,18 @@ class PointNetfeat(nn.Module):
         self.bn3 = nn.BatchNorm1d(1024)
         self.global_feat = global_feat
         self.feature_transform = feature_transform
+
         if self.feature_transform:
             self.fstn = STNkd(device, k=64)
 
+        self.attention = attention
+        if self.attention:
+            self.attn = AttnEncoderBlock(self.device)            
+
     def forward(self, x):
+        """
+        x: [batch_size, dimension, npoints]
+        """
         n_pts = x.size()[2]
         trans = self.stn(x)
         x = x.transpose(2, 1)
@@ -115,9 +157,13 @@ class PointNetfeat(nn.Module):
         else:
             trans_feat = None
 
+        if self.attention:
+            x = self.attn(x)
+
         pointfeat = x
         x = F.relu(self.bn2(self.conv2(x)))
         x = self.bn3(self.conv3(x))
+
         x = torch.max(x, 2, keepdim=True)[0]
         x = x.view(-1, 1024)
         if self.global_feat:
@@ -127,11 +173,12 @@ class PointNetfeat(nn.Module):
             return torch.cat([x, pointfeat], 1), trans, trans_feat
 
 class PointNetCls(nn.Module):
-    def __init__(self, device, k=2, feature_transform=False):
+    def __init__(self, device, k=2, feature_transform=False, attention=False):
         super(PointNetCls, self).__init__()
         self.device = device
         self.feature_transform = feature_transform
-        self.feat = PointNetfeat(self.device, global_feat=True, feature_transform=feature_transform)
+        self.attention = attention
+        self.feat = PointNetfeat(self.device, global_feat=True, feature_transform=feature_transform, attention=self.attention)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, k)
@@ -141,6 +188,9 @@ class PointNetCls(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
+        """
+        x: [batch_size, dimension, npoints]
+        """
         x, trans, trans_feat = self.feat(x)
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
@@ -186,35 +236,33 @@ def feature_transform_regularizer(trans, device):
 
 if __name__ == '__main__':
 
-    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if DEVICE.type == 'cpu':
-        print(' Using CPU')
+    DEVICE= 'cpu'
 
-    sim_data = torch.rand(32,3,2500)
-    trans = STN3d(DEVICE)
+    sim_data = torch.rand(32,3,2500, device=DEVICE)
+    trans = STN3d(DEVICE).to(DEVICE)
     out = trans(sim_data)
     print('stn', out.size())
     print('loss', feature_transform_regularizer(out, DEVICE))
 
-    sim_data_64d = torch.rand(32, 64, 2500)
-    trans = STNkd(DEVICE, k=64)
+    sim_data_64d = torch.rand(32, 64, 2500, device=DEVICE)
+    trans = STNkd(DEVICE, k=64).to(DEVICE)
     out = trans(sim_data_64d)
     print('stn64d', out.size())
     print('loss', feature_transform_regularizer(out, DEVICE))
 
-    pointfeat = PointNetfeat(DEVICE, global_feat=True)
+    pointfeat = PointNetfeat(DEVICE, global_feat=True).to(DEVICE)
     out, _, _ = pointfeat(sim_data)
     print('global feat', out.size())
 
-    pointfeat = PointNetfeat(DEVICE, global_feat=False)
+    pointfeat = PointNetfeat(DEVICE, global_feat=False).to(DEVICE)
     out, _, _ = pointfeat(sim_data)
     print('point feat', out.size())
 
-    cls = PointNetCls(DEVICE, k = 5)
+    cls = PointNetCls(DEVICE, k = 5).to(DEVICE)
     out, _, _ = cls(sim_data)
     print('class', out.size())
 
-    seg = PointNetDenseCls(DEVICE, k = 3)
+    seg = PointNetDenseCls(DEVICE, k = 3).to(DEVICE)
     out, _, _ = seg(sim_data)
     print('seg', out.size())
 
@@ -222,12 +270,14 @@ if __name__ == '__main__':
 # https://github.com/princeton-vl/SimpleView/blob/master/models/pointnet.py
 class PointNet(nn.Module):
 
-    def __init__(self, dataset, task, device):
+    def __init__(self, dataset, task, device, feature_transform=True, attention=True):
         super().__init__()
         self.task = task
         self.device = device
+        self.feature_transform = feature_transform
+        self.attention = attention
         num_class = len(dataset.classes)
-        self.model =  PointNetCls(self.device, k=num_class, feature_transform=True)
+        self.model =  PointNetCls(self.device, k=num_class, feature_transform=self.feature_transform, attention=self.attention)
 
     def forward(self, pc, cls=None):
         pc = pc.transpose(2, 1).float()
