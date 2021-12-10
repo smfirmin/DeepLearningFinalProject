@@ -25,7 +25,7 @@ if DEVICE.type == 'cpu':
 blue = lambda x: '\033[94m' + x + '\033[0m'
 
 
-def get_dataset(input_dataset, num_points):
+def get_dataset(input_dataset, npoints, pointwolf):
 
     convert_data = True
 
@@ -36,32 +36,34 @@ def get_dataset(input_dataset, num_points):
     
     dataset = ModelNetDataset(
         root=input_dataset,
-        npoints=num_points,
+        npoints=npoints,
         split='trainval',
         data_augmentation=True,
-        convert_off_to_ply=convert_data
+        convert_off_to_ply=convert_data,
+        pointwolf=pointwolf
         )
 
     test_dataset = ModelNetDataset(
         root=input_dataset,
         split='test',
-        npoints=num_points,
+        npoints=npoints,
         data_augmentation=False,
         convert_off_to_ply=convert_data)
 
     return dataset, test_dataset
 
-def get_model(dataset, task='cls'):
+def get_model(dataset, device, task='cls'):
 
     model = PointNet(
         dataset=dataset,
-        task=task)
+        task=task,
+        device=device)
 
     return model
 
-def entry_train(cfg):
+def entry_train(cfg, device):
     
-    dataset, test_dataset = get_dataset(cfg.dataset, cfg.num_points)
+    dataset, test_dataset = get_dataset(cfg.dataset, cfg.npoints, cfg.pointwolf)
     
     dataloader = torch.utils.data.DataLoader(
         dataset,
@@ -82,8 +84,8 @@ def entry_train(cfg):
         )
 
 
-    model = get_model(dataset, task='cls')
-    model.to(DEVICE)
+    model = get_model(dataset, device, task='cls')
+    model.to(device)
 
     print(model)
 
@@ -116,6 +118,7 @@ def entry_train(cfg):
         for data in tqdm(dataloader):
             points, target = data
             target = target[:, 0]
+            
 
             if cfg.augment == 'rsmix':
                 r = np.random.rand(1)
@@ -129,10 +132,11 @@ def entry_train(cfg):
                 else:
                     lam = torch.from_numpy(np.zeros(points.shape[0],dtype=float))
                     target_b = target
-                    points, lam, target, target_b = points.cuda(), lam.cuda(), target.cuda(), target_b.cuda()
+                    points, lam, target, target_b = points.to(device), lam.to(device), target.to(device), target_b.to(device)
             else:
-                points, target = points.cuda(), target.cuda()
+                points, target = points.to(device), target.to(device)
             
+
             out = model(points)
 
             if cfg.augment == 'rsmix':
@@ -143,7 +147,7 @@ def entry_train(cfg):
                 loss = F.cross_entropy(out['logit'], target)
 
             if cfg.feature_transform:
-                loss += feature_transform_regularizer(out['trans_feat']) * 0.001
+                loss += feature_transform_regularizer(out['trans_feat'], device) * 0.001
             
             train_loss += loss.item()
             optimizer.zero_grad()
@@ -198,7 +202,7 @@ def entry_train(cfg):
     # ax1.set_yscale('log')
     ax1.legend()
 
-    ax1.set_title(f"epochs={cfg.nepoch}, batchsz={cfg.batchSize}")
+    ax1.set_title(f"epochs={len(epochs)}, batchsz={cfg.batchSize}")
     plt.tight_layout()
 
     plt.savefig(f"cls/training.png")
@@ -211,11 +215,11 @@ if __name__ == '__main__':
     parser.add_argument(
         '--batchSize', type=int, default=32, help='input batch size')
     parser.add_argument(
-        '--num_points', type=int, default=2500, help='input batch size')
+        '--npoints', type=int, default=2500, help='input batch size')
     parser.add_argument(
         '--workers', type=int, help='number of data loading workers', default=4)
     parser.add_argument(
-        '--nepoch', type=int, default=250, help='number of epochs to train for')
+        '--nepoch', type=int, default=50, help='number of epochs to train for')
     parser.add_argument('--outf', type=str, default='cls', help='output folder')
     parser.add_argument('--model', type=str, default='', help='model path')
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
@@ -225,6 +229,9 @@ if __name__ == '__main__':
     parser.add_argument('--beta', type=float, default=0.0, help='rsmix hyperparameter')
     parser.add_argument('--rsmix_prob', type=float, default=0.5, help='rsmix hyperparameter')
 
+    # PointWOLF settings
+    parser.add_argument('--pointwolf', help='Use PointWOLF')
+    
     cmd_args = parser.parse_args()
 
     random.seed(cmd_args.seed)
@@ -233,7 +240,7 @@ if __name__ == '__main__':
 
     if cmd_args.entry == "train":
 
-        entry_train(cmd_args)
+        entry_train(cmd_args, DEVICE)
 
     elif cmd_args.entry in ["test", "valid"]:
 
