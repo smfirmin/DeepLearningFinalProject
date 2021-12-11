@@ -90,7 +90,7 @@ class STNkd(nn.Module):
         return x
 
 class AttnEncoderBlock(nn.Module):
-    def __init__(self, device, embed_dim=64, num_heads=1, norm='batch1d', dim_ff=128):
+    def __init__(self, device, embed_dim=64, num_heads=2, norm='batch1d', dim_ff=128):
         super(AttnEncoderBlock, self).__init__()
         self.device = device
         self.num_heads = num_heads
@@ -136,7 +136,8 @@ class PointNetfeat(nn.Module):
 
         self.attention = attention
         if self.attention:
-            self.attn = AttnEncoderBlock(self.device)            
+            self.attn1 = AttnEncoderBlock(self.device)         
+            self.attn2 = AttnEncoderBlock(self.device)            
 
     def forward(self, x):
         """
@@ -158,7 +159,8 @@ class PointNetfeat(nn.Module):
             trans_feat = None
 
         if self.attention:
-            x = self.attn(x)
+            x = self.attn1(x)
+            x = self.attn2(x)
 
         pointfeat = x
         x = F.relu(self.bn2(self.conv2(x)))
