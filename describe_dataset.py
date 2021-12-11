@@ -42,6 +42,7 @@ if __name__ == '__main__':
 
     max_points = {key: max(values) for key, values in class_counts.items()}
     number_of_examples = {key: len(values) for key, values in class_counts.items()}
+    
 
     plt.bar(range(len(max_points)), list(max_points.values()), align='center')
     plt.xticks(range(len(max_points)), list(max_points.keys()))

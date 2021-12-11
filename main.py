@@ -69,7 +69,9 @@ def entry_train(cfg, device):
         dataset,
         batch_size=cfg.batchSize,
         shuffle=True,
-        num_workers=int(cfg.workers))
+        num_workers=int(cfg.workers),
+        prefetch_factor=4,
+        pin_memory=True)
 
     testdataloader = torch.utils.data.DataLoader(
             test_dataset,
@@ -82,7 +84,6 @@ def entry_train(cfg, device):
         " Test points:", len(test_dataset), 
         " Classes:", len(dataset.classes)
         )
-
 
     model = get_model(dataset, device, task='cls')
     model.to(device)
