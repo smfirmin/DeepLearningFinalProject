@@ -10,7 +10,7 @@ import numpy as np
 
 
 class PointWOLF():
-    def __init__(self, args):
+    def __init__(self):
         self.num_anchor = 4
         self.sample_type = "fps"
         self.sigma = 0.5
