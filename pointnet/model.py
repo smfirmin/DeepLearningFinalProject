@@ -90,7 +90,7 @@ class STNkd(nn.Module):
         return x
 
 class AttnEncoderBlock(nn.Module):
-    def __init__(self, device, embed_dim=64, num_heads=2, norm='batch1d', dim_ff=128):
+    def __init__(self, device, embed_dim=64, num_heads=1, norm='batch1d', dim_ff=128):
         super(AttnEncoderBlock, self).__init__()
         self.device = device
         self.num_heads = num_heads
