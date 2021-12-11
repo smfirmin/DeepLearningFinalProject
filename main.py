@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 from dataset import ModelNetDataset
 from pointnet.model import PointNet, feature_transform_regularizer
 
+import utils.rsmix_provider as rsmix_provider
+
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if DEVICE.type == 'cpu':
     print(' Using CPU')
@@ -117,10 +119,32 @@ def entry_train(cfg, device):
             points, target = data
             target = target[:, 0]
             
-            points, target = points.to(device), target.to(device)
+
+            if cfg.augment == 'rsmix':
+                r = np.random.rand(1)
+                # r = 0.1 # for debug
+                # if convda: batch_data = self._augment_batch_data(batch_data, shuffle=shuffle, jitter=jitter, rot=rot, rdscale=rdscale, shift=shift)
+                # if rddrop: batch_data = self._rddrop_batch_data(batch_data)
+                if cfg.beta > 0 and r < cfg.rsmix_prob:
+                    n_sample = int(np.around(points.shape[1]/2))
+                    points, lam, target, target_b = rsmix_provider.rsmix(points, target, beta=cfg.beta, n_sample=n_sample)
+                    points, lam, target, target_b = points.cuda(), lam.cuda(), target.cuda(), target_b.cuda()
+                else:
+                    lam = torch.from_numpy(np.zeros(points.shape[0],dtype=float))
+                    target_b = target
+                    points, lam, target, target_b = points.to(device), lam.to(device), target.to(device), target_b.to(device)
+            else:
+                points, target = points.to(device), target.to(device)
+            
+
             out = model(points)
 
-            loss = F.cross_entropy(out['logit'], target)
+            if cfg.augment == 'rsmix':
+                loss_a = F.cross_entropy(out['logit'], target) * (1-lam)
+                loss_b = F.cross_entropy(out['logit'], target_b) * lam
+                loss = torch.mean(torch.add(loss_a, loss_b))
+            else:
+                loss = F.cross_entropy(out['logit'], target)
 
             if cfg.feature_transform:
                 loss += feature_transform_regularizer(out['trans_feat'], device) * 0.001
@@ -201,6 +225,9 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, required=True, help="dataset path")
     parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
     parser.add_argument('--seed', default=42)
+    parser.add_argument('--augment', type=str, default=None, help='Augmentation method')
+    parser.add_argument('--beta', type=float, default=0.0, help='rsmix hyperparameter')
+    parser.add_argument('--rsmix_prob', type=float, default=0.5, help='rsmix hyperparameter')
 
     # PointWOLF settings
     parser.add_argument('--pointwolf', help='Use PointWOLF')
