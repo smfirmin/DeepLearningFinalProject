@@ -99,7 +99,7 @@ class ModelNetDataset(data.Dataset):
             point_set += np.random.normal(0, 0.02, size=point_set.shape)  # random jitter
 
         if self.pointwolf is not None:
-                origin, point_set = self.PointWOLF(point_set)
+                origin, point_set = self.pointwolf(point_set)
 
         point_set = torch.from_numpy(point_set.astype(np.float32))
         cls = torch.from_numpy(np.array([cls]).astype(np.int64))
