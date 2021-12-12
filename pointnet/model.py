@@ -96,7 +96,7 @@ class AttnEncoderBlock(nn.Module):
         self.num_heads = num_heads
         self.embed_dim = embed_dim
         self.dim_ff = dim_ff
-        self.attn = nn.MultiheadAttention(embed_dim=self.embed_dim, num_heads=self.num_heads, batch_first=True)
+        self.attn = nn. (embed_dim=self.embed_dim, num_heads=self.num_heads, batch_first=True)
         self.ff1 = nn.Linear(64, self.dim_ff)
         self.ff2 = nn.Linear(self.dim_ff, 64)
         self.relu = nn.ReLU()
@@ -272,7 +272,7 @@ if __name__ == '__main__':
 # https://github.com/princeton-vl/SimpleView/blob/master/models/pointnet.py
 class PointNet(nn.Module):
 
-    def __init__(self, dataset, task, device, feature_transform=True, attention=True):
+    def __init__(self, dataset, task, device, feature_transform=False, attention=True):
         super().__init__()
         self.task = task
         self.device = device
